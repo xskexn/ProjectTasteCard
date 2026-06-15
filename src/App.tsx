@@ -1,0 +1,585 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect } from 'react';
+import { 
+  Image as ImageIcon, 
+  RotateCcw, 
+  Heart, 
+  UserCheck, 
+  Users,
+  Instagram
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+
+import { CreatorProfile, MediaItem } from './types';
+import { 
+  INITIAL_PROFILE, 
+  INITIAL_MEDIA_ITEMS 
+} from './initialData';
+import { DetailModal } from './components/DetailModal';
+import { ShareModal } from './components/ShareModal';
+import { SnapshotModal } from './components/SnapshotModal';
+
+// Define our curated, high-contrast, premium color themes from the user's specs
+interface ColorTheme {
+  name: string;
+  bg: string;          // Page background color
+  text: string;        // Main text color
+  cardBg: string;      // Card bg (glass blur)
+  cardBorder: string;  // Card border
+}
+
+const APP_THEMES: ColorTheme[] = [
+  {
+    name: "Cream",
+    bg: '#F3E5C3',
+    text: '#0C1519',
+    cardBg: 'bg-white/10 backdrop-blur-3xl',
+    cardBorder: 'border-white/25'
+  },
+  {
+    name: "China Rose",
+    bg: '#A24C61',
+    text: '#FDF9F6',
+    cardBg: 'bg-white/5 backdrop-blur-3xl',
+    cardBorder: 'border-white/15'
+  },
+  {
+    name: "Kobi",
+    bg: '#E2A9C0',
+    text: '#411528',
+    cardBg: 'bg-white/10 backdrop-blur-3xl',
+    cardBorder: 'border-white/20'
+  },
+  {
+    name: "Queen Pink",
+    bg: '#E1C9D5',
+    text: '#411528',
+    cardBg: 'bg-white/10 backdrop-blur-3xl',
+    cardBorder: 'border-white/20'
+  },
+  {
+    name: "Chocolate Kisses",
+    bg: '#411528',
+    text: '#FFEFF5',
+    cardBg: 'bg-white/5 backdrop-blur-3xl',
+    cardBorder: 'border-white/10'
+  },
+  {
+    name: "Persian Plum",
+    bg: '#710C21',
+    text: '#FDF0F3',
+    cardBg: 'bg-black/20 backdrop-blur-3xl',
+    cardBorder: 'border-white/15'
+  },
+  {
+    name: "Jacarta",
+    bg: '#3F2A52',
+    text: '#F5EFFF',
+    cardBg: 'bg-white/5 backdrop-blur-3xl',
+    cardBorder: 'border-white/10'
+  },
+  {
+    name: "Dark Blue-Gray",
+    bg: '#75619D',
+    text: '#FFFFFF',
+    cardBg: 'bg-white/5 backdrop-blur-3xl',
+    cardBorder: 'border-white/15'
+  },
+  {
+    name: "Wisteria",
+    bg: '#BEAEDB',
+    text: '#3F2A52',
+    cardBg: 'bg-white/10 backdrop-blur-3xl',
+    cardBorder: 'border-white/20'
+  },
+  {
+    name: "Bright Gray",
+    bg: '#E6EFF7',
+    text: '#3A2D34',
+    cardBg: 'bg-white/15 backdrop-blur-3xl',
+    cardBorder: 'border-white/30'
+  },
+  {
+    name: "Black Coffee",
+    bg: '#3A2D34',
+    text: '#F0EBF2',
+    cardBg: 'bg-white/5 backdrop-blur-3xl',
+    cardBorder: 'border-white/10'
+  },
+  {
+    name: "Cadet Grey",
+    bg: '#959BB5',
+    text: '#0A1123',
+    cardBg: 'bg-white/10 backdrop-blur-3xl',
+    cardBorder: 'border-white/20'
+  },
+  {
+    name: "Chinese Black",
+    bg: '#0A1123',
+    text: '#E6EFF7',
+    cardBg: 'bg-white/5 backdrop-blur-3xl',
+    cardBorder: 'border-white/10'
+  },
+  {
+    name: "American Blue",
+    bg: '#3A3E6C',
+    text: '#E6EFF7',
+    cardBg: 'bg-white/5 backdrop-blur-3xl',
+    cardBorder: 'border-white/10'
+  },
+  {
+    name: "Ube",
+    bg: '#8387C3',
+    text: '#0A1123',
+    cardBg: 'bg-white/10 backdrop-blur-3xl',
+    cardBorder: 'border-white/20'
+  },
+  {
+    name: "Cool Grey",
+    bg: '#8A8CAC',
+    text: '#0A1123',
+    cardBg: 'bg-white/10 backdrop-blur-3xl',
+    cardBorder: 'border-white/20'
+  }
+];
+
+export default function App() {
+  // Application Data States
+  const [profile, setProfile] = useState<CreatorProfile>({ ...INITIAL_PROFILE });
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([ ...INITIAL_MEDIA_ITEMS ]);
+  
+  // Custom Background Color Cycler
+  const [themeIndex, setThemeIndex] = useState(0);
+  const currentTheme = APP_THEMES[themeIndex];
+
+  // Custom Background Photo Upload & brightness detector
+  const [customBg, setCustomBg] = useState<string | null>(null);
+  const [isBgDark, setIsBgDark] = useState<boolean>(false);
+
+  const analyzeImageBrightness = (dataUrl: string) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 10;
+      canvas.height = 10;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0, 10, 10);
+      try {
+        const imageData = ctx.getImageData(0, 0, 10, 10);
+        const data = imageData.data;
+        let r = 0, g = 0, b = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i];
+          g += data[i+1];
+          b += data[i+2];
+        }
+        const count = data.length / 4;
+        const avgR = r / count;
+        const avgG = g / count;
+        const avgB = b / count;
+        const brightness = Math.sqrt(
+          0.299 * (avgR * avgR) +
+          0.587 * (avgG * avgG) +
+          0.114 * (avgB * avgB)
+        );
+        setIsBgDark(brightness < 135);
+      } catch (_) {
+        // Fallback
+      }
+    };
+    img.src = dataUrl;
+  };
+
+  const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        setCustomBg(dataUrl);
+        analyzeImageBrightness(dataUrl);
+        postIslandToast("Background updated smoothly! 🌌");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Adaptive font colors & container glass styles
+  const textColor = customBg 
+    ? (isBgDark ? '#FDF9F6' : '#0C1519') 
+    : currentTheme.text;
+
+  const cardBgClass = customBg
+    ? (isBgDark ? 'bg-black/25 backdrop-blur-3xl' : 'bg-white/15 backdrop-blur-3xl')
+    : currentTheme.cardBg;
+
+  const cardBorderClass = customBg
+    ? (isBgDark ? 'border-white/10' : 'border-white/20')
+    : currentTheme.cardBorder;
+
+  // Active Screen Interactivities
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [isJoinedMatch, setIsJoinedMatch] = useState(false); // Follow Toggle
+
+  // Modals & Popups States
+  const [activeDetailItem, setActiveDetailItem] = useState<MediaItem | null>(null);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isSnapshotOpen, setIsSnapshotOpen] = useState(false);
+  const [islandMessage, setIslandMessage] = useState<string | null>(null);
+  
+  // Like Register (local tracking)
+  const [likedItems, setLikedItems] = useState<Record<string, boolean>>({});
+
+  // Streamlined Dynamic Island Toast Generator
+  const postIslandToast = (message: string) => {
+    setIslandMessage(message);
+  };
+
+  // Clear Island Messages
+  useEffect(() => {
+    if (islandMessage) {
+      const timer = setTimeout(() => {
+        setIslandMessage(null);
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [islandMessage]);
+
+  // Highlight specific cards depending on tag selecting
+  const filteredMediaItems = mediaItems.map(item => {
+    const isMatched = selectedTag === null || item.category === selectedTag;
+    return { ...item, highlighted: isMatched };
+  });
+
+  // Follow Button Toggle Action
+  const handleFollowToggle = () => {
+    const isNewState = !isJoinedMatch;
+    setIsJoinedMatch(isNewState);
+    setProfile(prev => ({
+      ...prev,
+      followers: isNewState ? prev.followers + 1 : prev.followers - 1
+    }));
+    postIslandToast(isNewState ? "Following Lina! ➕" : "Unfollowed Lina");
+  };
+
+  // Safe reset to standards
+  const resetToFactoryDefaults = () => {
+    setProfile({ ...INITIAL_PROFILE });
+    setMediaItems([ ...INITIAL_MEDIA_ITEMS ]);
+    setThemeIndex(0);
+    setCustomBg(null);
+    setIsBgDark(false);
+    setSelectedTag(null);
+    setIsJoinedMatch(false);
+    setLikedItems({});
+    postIslandToast('Properties Reset 🔄');
+  };
+
+  const handleThemeChange = () => {
+    let nextIndex;
+    do {
+      nextIndex = Math.floor(Math.random() * APP_THEMES.length);
+    } while (nextIndex === themeIndex && APP_THEMES.length > 1);
+    
+    setThemeIndex(nextIndex);
+    postIslandToast(`Theme: ${APP_THEMES[nextIndex].name} 🎨`);
+  };
+
+  // Like metrics toggle action
+  const handleToggleLike = (id: string, currentlyLiked: boolean) => {
+    setLikedItems(prev => ({ ...prev, [id]: !currentlyLiked }));
+    setMediaItems(prev => 
+      prev.map(item => {
+        if (item.id === id) {
+          return { ...item, likes: currentlyLiked ? item.likes - 1 : item.likes + 1 };
+        }
+        return item;
+      })
+    );
+    postIslandToast(!currentlyLiked ? 'You loved this card ❤️' : 'Removed from likes');
+  };
+
+  // Action to change/update a photo on the card in real-time
+  const handleUpdateItemImage = (id: string, newImage: string) => {
+    setMediaItems(prev =>
+      prev.map(item => item.id === id ? { ...item, image: newImage } : item)
+    );
+    setActiveDetailItem(prev => prev && prev.id === id ? { ...prev, image: newImage } : prev);
+    postIslandToast('Tastecard Photo Updated 🎨');
+  };
+
+  return (
+    <div 
+      className="min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 transition-all duration-500 relative select-none bg-cover bg-center"
+      style={{ 
+        backgroundColor: currentTheme.bg, 
+        backgroundImage: customBg ? `url("${customBg}")` : 'none',
+        color: textColor 
+      }}
+    >
+      {/* Background overlay for custom background to guarantee exquisite readability */}
+      {customBg && (
+        <div className={`absolute inset-0 transition-opacity duration-500 pointer-events-none ${
+          isBgDark ? 'bg-black/25' : 'bg-white/5'
+        }`} />
+      )}
+      {/* Top Banner Dynamic Toast Island */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50">
+        <AnimatePresence mode="wait">
+          {islandMessage && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: -20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: -20 }}
+              className="bg-[#0C1519]/95 text-white border border-white/10 flex items-center gap-2.5 px-6 py-3 rounded-full shadow-2xl overflow-hidden min-w-[220px] justify-center text-center"
+            >
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
+              <span className="text-xs font-medium tracking-wide">
+                {islandMessage}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Main Adaptable Device Frame Card container */}
+      <main className="w-full max-w-sm sm:max-w-md my-auto relative">
+        <div 
+          className={`w-full rounded-[40px] p-6 backdrop-blur-3xl border shadow-xl flex flex-col space-y-5 transition-all duration-500 ${cardBgClass} ${cardBorderClass}`}
+          id="lina-tastecard-portal"
+        >
+          {/* Main Card Inline Header Navigation */}
+          <div className="w-full flex items-center justify-between pb-3.5 border-b border-current/15">
+            {/* Reset Defaults button */}
+            <button 
+              onClick={resetToFactoryDefaults}
+              className="w-9 h-9 rounded-full bg-current/10 hover:bg-current/15 active:scale-90 transition-all flex items-center justify-center text-current cursor-pointer"
+              title="Reset Settings"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+
+            {/* Customizer title */}
+            <span className="text-xs font-bold font-mono tracking-widest uppercase text-current/90">
+              Tastecard
+            </span>
+
+            {/* Background Image Upload button */}
+            <button 
+              onClick={() => document.getElementById('bg-photo-uploader')?.click()}
+              className="w-9 h-9 rounded-full bg-current/10 hover:bg-current/15 active:scale-90 transition-all flex items-center justify-center text-current cursor-pointer"
+              title="Upload custom background photo"
+            >
+              <ImageIcon className="w-4 h-4" />
+            </button>
+            <input 
+              type="file"
+              id="bg-photo-uploader"
+              accept="image/*"
+              onChange={handleBgUpload}
+              className="hidden"
+            />
+          </div>
+
+          {/* Profile Owner Identity block */}
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              {/* Name rendered inline */}
+              <h1 className="text-3xl font-display font-bold tracking-tight text-current">
+                {profile.name}
+              </h1>
+              
+              {/* Dynamic Rarity Badge */}
+              {profile.bioQuote === 'Rarity: rare' ? (
+                <div className="flex items-center gap-2 py-0.5 select-none font-sans">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-current/60">Tastecard Rarity:</span>
+                  <span className="font-display font-extrabold uppercase text-xs tracking-wider bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-800 bg-clip-text text-transparent drop-shadow-[0_1px_1px_rgba(245,158,11,0.15)]">
+                    rare
+                  </span>
+                </div>
+              ) : (
+                <div className="pl-3 py-0.5 border-l-2 border-current/25 text-current/70 italic text-xs">
+                  "{profile.bioQuote}"
+                </div>
+              )}
+            </div>
+
+            {/* Responsive "The Drop" Custom color changer theme cycler */}
+            <button
+              onClick={handleThemeChange}
+              className="text-current hover:opacity-80 hover:scale-125 active:scale-90 transition-all duration-300 select-none cursor-pointer p-1 relative group"
+              title="the drop • Randomize Color Theme"
+            >
+              <div className="absolute inset-0 bg-current/5 blur-[4px] rounded-full scale-0 group-hover:scale-100 transition-transform duration-300" />
+              {/* Perfect replica of outline drop image with inner curve glistening */}
+              <svg className="w-7 h-7 relative z-10 filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]" fill="none" stroke="currentColor" strokeWidth={2.4} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a6 6 0 006-6c0-4-6-11-6-11S6 11 6 15a6 6 0 006 6z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 16a3 3 0 010-3.5" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Counts Statistics rows */}
+          <div className="grid grid-cols-3 gap-2 py-3.5 border-y border-current/15">
+            <div className="text-left">
+              <span className="block font-mono text-lg font-extrabold text-current tracking-tight">
+                {profile.followers === 2300 ? '2.3K' : profile.followers}
+              </span>
+              <span className="block text-[9px] uppercase tracking-wider text-current/70 font-semibold mt-0.5">
+                {profile.followers === 2300 ? 'Photos' : 'Followers'}
+              </span>
+            </div>
+
+            <div className="text-left">
+              <span className="block font-mono text-lg font-extrabold text-current tracking-tight">
+                {profile.following}
+              </span>
+              <span className="block text-[9px] uppercase tracking-wider text-current/70 font-semibold mt-0.5">
+                emerging themes
+              </span>
+            </div>
+
+            <div className="text-left">
+              <span className="block font-mono text-lg font-extrabold text-current tracking-tight">
+                {profile.commentsCount}
+              </span>
+              <span className="block text-[9px] uppercase tracking-wider text-current/70 font-semibold mt-0.5">
+                Places
+              </span>
+            </div>
+          </div>
+
+          {/* Centered chips wrapper containing tag filters with premium glass style */}
+          <div className="flex flex-wrap gap-2 pt-1 w-full justify-center max-w-[325px] mx-auto text-center">
+            {profile.tags.map((tag) => {
+              const isActive = selectedTag === tag;
+              const displayTag = tag.startsWith('#') ? tag.slice(1) : tag;
+              return (
+                <button
+                  key={tag}
+                  onClick={() => {
+                    const next = isActive ? null : tag;
+                    setSelectedTag(next);
+                    postIslandToast(next ? `Filter active: ${displayTag} 🔍` : 'Filters cleared 🛡️');
+                  }}
+                  className={`text-xs font-sans px-3.5 py-1.5 rounded-full transition-all duration-300 active:scale-95 text-center cursor-pointer select-none border backdrop-blur-md ${
+                    isActive
+                      ? 'bg-white/35 text-current font-bold border-white/50 scale-105 shadow-md'
+                      : 'bg-white/10 text-current border-white/15 hover:bg-white/20'
+                  }`}
+                >
+                  {displayTag}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Header divider block: Emergent Themes */}
+          <div className="text-center w-full pt-1.5 select-none">
+            <span className="text-[13px] font-bold tracking-widest font-mono uppercase text-current/90">
+              Emergent Themes
+            </span>
+          </div>
+
+          {/* Media grid showing 2 cards per row */}
+          <div className="py-1">
+            <div className="grid grid-cols-2 gap-3">
+              {filteredMediaItems.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => setActiveDetailItem(item)}
+                  className={`relative aspect-[3/4] rounded-3xl overflow-hidden cursor-pointer transition-all duration-300 border border-black/5 shadow-md hover:scale-[1.02] hover:shadow-lg ${
+                    item.highlighted ? 'opacity-100 scale-100' : 'opacity-35 scale-95 blur-[0.5px]'
+                  }`}
+                  title={`View details on ${item.title}`}
+                  id={`media-card-${item.id}`}
+                >
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover select-none"
+                  />
+                  {/* Subtle vignette black shadow overlay over photos */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
+                  
+                  {/* Item Description card details title */}
+                  <div className="absolute bottom-3 left-3 right-3 text-xs leading-snug">
+                    <span className="block font-medium text-white line-clamp-2">
+                      {item.title}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Share Tastecard Button Section with high contrast Glass look */}
+          <div className="pt-1">
+            <button
+              onClick={() => setIsSnapshotOpen(true)}
+              className="w-full py-3.5 rounded-2xl text-xs font-extrabold font-sans tracking-widest transition-all duration-300 shadow-md active:scale-97 flex items-center justify-center gap-2 cursor-pointer uppercase bg-white/15 hover:bg-white/25 border border-white/35 backdrop-blur-md text-current hover:shadow-lg"
+              id="share-tastecard-btn"
+            >
+              Share Tastecard
+            </button>
+          </div>
+
+          {/* Miniature sub-text descriptor */}
+          <div id="card-footer-caption" className="text-center py-2 text-[10px] text-current/40 select-none font-mono tracking-widest uppercase">
+            Lina's Tastecard • #0000
+          </div>
+        </div>
+
+        {/* Global Modal Overlay Layers */}
+        <AnimatePresence>
+          {activeDetailItem && (
+            <DetailModal
+              item={activeDetailItem}
+              onClose={() => setActiveDetailItem(null)}
+              liked={!!likedItems[activeDetailItem.id]}
+              onToggleLike={handleToggleLike}
+              onUpdateImage={handleUpdateItemImage}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {isShareOpen && (
+            <ShareModal
+              handle={profile.handle}
+              name={profile.name}
+              onClose={() => setIsShareOpen(false)}
+              onPostToast={(msg) => {
+                postIslandToast(msg);
+                setIsShareOpen(false);
+              }}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {isSnapshotOpen && (
+            <SnapshotModal
+              profile={profile}
+              mediaItems={mediaItems}
+              currentTheme={currentTheme}
+              customBg={customBg}
+              isBgDark={isBgDark}
+              selectedTag={selectedTag}
+              onClose={() => setIsSnapshotOpen(false)}
+              onPostToast={(msg) => {
+                postIslandToast(msg);
+              }}
+            />
+          )}
+        </AnimatePresence>
+      </main>
+    </div>
+  );
+}

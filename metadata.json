@@ -1,0 +1,6 @@
+{
+  "name": "Jane Mayhem Creator Profile",
+  "description": "Interactive, highly polished digital business card and creator profile based on Jane Mayhem's design.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
