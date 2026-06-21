@@ -5,23 +5,25 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Image as ImageIcon, 
-  RotateCcw, 
-  Heart, 
-  UserCheck, 
-  Users,
-  Instagram,
-  Sparkles,
   Compass,
-  Palette,
-  Layers,
+  Sparkles,
   MapPin,
-  Star,
-  Award,
+  Heart,
+  Bookmark,
   ChevronRight,
-  Sliders,
+  Check,
   CheckCircle2,
-  Bookmark
+  Bell,
+  ArrowUpRight,
+  X,
+  RotateCcw,
+  BookOpen,
+  Utensils,
+  Share2,
+  Sliders,
+  ArrowLeft,
+  LayoutGrid,
+  ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -30,976 +32,650 @@ import {
   INITIAL_PROFILE, 
   INITIAL_MEDIA_ITEMS 
 } from './initialData';
-import { DetailModal } from './components/DetailModal';
-import { ShareModal } from './components/ShareModal';
 import { SnapshotModal } from './components/SnapshotModal';
 
-// Define our curated, high-contrast, premium color themes from the user's specs
-interface ColorTheme {
-  name: string;
-  bg: string;          // Page background color
-  text: string;        // Main text color
-  cardBg: string;      // Card bg (glass blur)
-  cardBorder: string;  // Card border
+// Interactive high-fidelity categories mimicking the Saudi mockup slides perfectly
+export interface BeautifulCategory {
+  id: string;
+  title: string;
+  location: string;
+  subtitle: string;
+  image: string;
+  badgeText: string;
+  tagline: string;
+  description: string;
+  percentageText: string;
+  anchorsCount: number;
+  // Adaptive colors properties:
+  cardBg: string;
+  accentColor: string;
+  accentHex: string;
+  borderColor: string;
+  glowColor: string;
 }
 
-const APP_THEMES: ColorTheme[] = [
+export const IMMERSIVE_CATEGORIES: BeautifulCategory[] = [
   {
-    name: "Cream",
-    bg: '#F3E5C3',
-    text: '#0C1519',
-    cardBg: 'bg-white/10 backdrop-blur-3xl',
-    cardBorder: 'border-white/25'
+    id: '#nomad',
+    title: 'THE PEAKS',
+    location: 'ALULA CANYONS',
+    subtitle: 'INVEST IN DISCOVERY',
+    image: '/src/assets/images/media_butterfly_1781548057361.jpg',
+    badgeText: 'EPIC',
+    tagline: 'A physical high-altitude sanctuary within desert peaks defying conventional exploration.',
+    description: 'Witness high-altitude luxury blended with untouched orange sand ranges. Integrates a low-impact energy grid and mountain trails mapping raw biodiversity nodes.',
+    percentageText: '96%',
+    anchorsCount: 345,
+    cardBg: 'bg-[#1a1411]/95',
+    accentColor: 'text-amber-400',
+    accentHex: '#fbbf24',
+    borderColor: 'border-amber-500/20',
+    glowColor: 'rgba(251, 191, 36, 0.06)'
   },
   {
-    name: "China Rose",
-    bg: '#A24C61',
-    text: '#FDF9F6',
-    cardBg: 'bg-white/5 backdrop-blur-3xl',
-    cardBorder: 'border-white/15'
+    id: '#foodie',
+    title: 'THE FLAVORS',
+    location: 'RIYADH OASIS',
+    subtitle: 'INVEST IN GASTRONOMY',
+    image: '/src/assets/images/media_salad_1781548043109.jpg',
+    badgeText: 'LEGENDARY',
+    tagline: 'A sensory voyage across ancient gardens, local citric notes, and fresh cold-pressed herbs.',
+    description: 'Raw local cabbage, wild avocado mash, toasted sesames, and signature date citrus enhancements formulated in real-time by leading culinary designers.',
+    percentageText: '91%',
+    anchorsCount: 566,
+    cardBg: 'bg-[#0e1611]/95',
+    accentColor: 'text-emerald-400',
+    accentHex: '#34d399',
+    borderColor: 'border-emerald-500/20',
+    glowColor: 'rgba(52, 211, 153, 0.06)'
   },
   {
-    name: "Kobi",
-    bg: '#E2A9C0',
-    text: '#411528',
-    cardBg: 'bg-white/10 backdrop-blur-3xl',
-    cardBorder: 'border-white/20'
+    id: '#wellness',
+    title: 'THE REFUSION',
+    location: 'RED SEA PORT',
+    subtitle: 'INVEST IN LONGEVITY',
+    image: '/src/assets/images/media_cocktail_1781548071603.jpg',
+    badgeText: 'RARE',
+    tagline: 'High-mountain sage extracts slowly filtered over pure glacier crystal ice blocks.',
+    description: 'Double-poured organic wellness infusions. High in local botany extracts to expand focus and mindfulness during prolonged sunset desert meditations.',
+    percentageText: '89%',
+    anchorsCount: 189,
+    cardBg: 'bg-[#1e1010]/95',
+    accentColor: 'text-rose-400',
+    accentHex: '#f43f5e',
+    borderColor: 'border-rose-500/20',
+    glowColor: 'rgba(244, 63, 148, 0.06)'
   },
   {
-    name: "Queen Pink",
-    bg: '#E1C9D5',
-    text: '#411528',
-    cardBg: 'bg-white/10 backdrop-blur-3xl',
-    cardBorder: 'border-white/20'
-  },
-  {
-    name: "Chocolate Kisses",
-    bg: '#411528',
-    text: '#FFEFF5',
-    cardBg: 'bg-white/5 backdrop-blur-3xl',
-    cardBorder: 'border-white/10'
-  },
-  {
-    name: "Persian Plum",
-    bg: '#710C21',
-    text: '#FDF0F3',
-    cardBg: 'bg-black/20 backdrop-blur-3xl',
-    cardBorder: 'border-white/15'
-  },
-  {
-    name: "Jacarta",
-    bg: '#3F2A52',
-    text: '#F5EFFF',
-    cardBg: 'bg-white/5 backdrop-blur-3xl',
-    cardBorder: 'border-white/10'
-  },
-  {
-    name: "Dark Blue-Gray",
-    bg: '#75619D',
-    text: '#FFFFFF',
-    cardBg: 'bg-white/5 backdrop-blur-3xl',
-    cardBorder: 'border-white/15'
-  },
-  {
-    name: "Wisteria",
-    bg: '#BEAEDB',
-    text: '#3F2A52',
-    cardBg: 'bg-white/10 backdrop-blur-3xl',
-    cardBorder: 'border-white/20'
-  },
-  {
-    name: "Bright Gray",
-    bg: '#E6EFF7',
-    text: '#3A2D34',
-    cardBg: 'bg-white/15 backdrop-blur-3xl',
-    cardBorder: 'border-white/30'
-  },
-  {
-    name: "Black Coffee",
-    bg: '#3A2D34',
-    text: '#F0EBF2',
-    cardBg: 'bg-white/5 backdrop-blur-3xl',
-    cardBorder: 'border-white/10'
-  },
-  {
-    name: "Cadet Grey",
-    bg: '#959BB5',
-    text: '#0A1123',
-    cardBg: 'bg-white/10 backdrop-blur-3xl',
-    cardBorder: 'border-white/20'
-  },
-  {
-    name: "Chinese Black",
-    bg: '#0A1123',
-    text: '#E6EFF7',
-    cardBg: 'bg-white/5 backdrop-blur-3xl',
-    cardBorder: 'border-white/10'
-  },
-  {
-    name: "American Blue",
-    bg: '#3A3E6C',
-    text: '#E6EFF7',
-    cardBg: 'bg-white/5 backdrop-blur-3xl',
-    cardBorder: 'border-white/10'
-  },
-  {
-    name: "Ube",
-    bg: '#8387C3',
-    text: '#0A1123',
-    cardBg: 'bg-white/10 backdrop-blur-3xl',
-    cardBorder: 'border-white/20'
-  },
-  {
-    name: "Cool Grey",
-    bg: '#8A8CAC',
-    text: '#0A1123',
-    cardBg: 'bg-white/10 backdrop-blur-3xl',
-    cardBorder: 'border-white/20'
+    id: '#bookworm',
+    title: 'THE ARCHIVES',
+    location: 'DIRIYAH KEEP',
+    subtitle: 'INVEST IN WISDOM',
+    image: '/src/assets/images/media_plant_1781548031238.jpg',
+    badgeText: 'COMMON',
+    tagline: 'Curated archives of world philosophies, natural history, and historic desert architectures.',
+    description: 'Anaerobic vaults preserved to safe-guard classic scripts. Surrounded by living library plant arrangements creating perfect quiet study zones.',
+    percentageText: '94%',
+    anchorsCount: 220,
+    cardBg: 'bg-[#101412]/95',
+    accentColor: 'text-teal-400',
+    accentHex: '#2dd4bf',
+    borderColor: 'border-teal-500/20',
+    glowColor: 'rgba(45, 212, 191, 0.06)'
   }
 ];
 
 export default function App() {
-  // Application Data States
   const [profile, setProfile] = useState<CreatorProfile>({ ...INITIAL_PROFILE });
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([ ...INITIAL_MEDIA_ITEMS ]);
-  
-  // Custom Design Preset Style Switching Switcher State
-  const [designStyle, setDesignStyle] = useState<'glass' | 'immersive' | 'editorial'>('glass');
-
-  // Custom Background Color Cycler
-  const [themeIndex, setThemeIndex] = useState(0);
-  const currentTheme = APP_THEMES[themeIndex];
-
-  // Custom Background Photo Upload & brightness detector
-  const [customBg, setCustomBg] = useState<string | null>(null);
-  const [isBgDark, setIsBgDark] = useState<boolean>(false);
-
-  const analyzeImageBrightness = (dataUrl: string) => {
-    const img = new window.Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 10;
-      canvas.height = 10;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.drawImage(img, 0, 0, 10, 10);
-      try {
-        const imageData = ctx.getImageData(0, 0, 10, 10);
-        const data = imageData.data;
-        let r = 0, g = 0, b = 0;
-        for (let i = 0; i < data.length; i += 4) {
-          r += data[i];
-          g += data[i+1];
-          b += data[i+2];
-        }
-        const count = data.length / 4;
-        const avgR = r / count;
-        const avgG = g / count;
-        const avgB = b / count;
-        const brightness = Math.sqrt(
-          0.299 * (avgR * avgR) +
-          0.587 * (avgG * avgG) +
-          0.114 * (avgB * avgB)
-        );
-        setIsBgDark(brightness < 135);
-      } catch (_) {
-        // Fallback
-      }
-    };
-    img.src = dataUrl;
-  };
-
-  const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        setCustomBg(dataUrl);
-        analyzeImageBrightness(dataUrl);
-        postIslandToast("Background updated smoothly! 🌌");
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Adaptive font colors & container glass styles
-  const textColor = customBg 
-    ? (isBgDark ? '#FDF9F6' : '#0C1519') 
-    : currentTheme.text;
-
-  const cardBgClass = customBg
-    ? (isBgDark ? 'bg-black/25 backdrop-blur-3xl' : 'bg-white/15 backdrop-blur-3xl')
-    : currentTheme.cardBg;
-
-  const cardBorderClass = customBg
-    ? (isBgDark ? 'border-white/10' : 'border-white/20')
-    : currentTheme.cardBorder;
-
-  // Active Screen Interactivities
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [isJoinedMatch, setIsJoinedMatch] = useState(false); // Follow Toggle
-
-  // Modals & Popups States
-  const [activeDetailItem, setActiveDetailItem] = useState<MediaItem | null>(null);
-  const [isShareOpen, setIsShareOpen] = useState(false);
-  const [isSnapshotOpen, setIsSnapshotOpen] = useState(false);
-  const [islandMessage, setIslandMessage] = useState<string | null>(null);
-  
-  // Like Register (local tracking)
+  const [currentScreen, setCurrentScreen] = useState<'welcome' | 'deck' | 'expanded'>('welcome');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [activeCategoryIndex, setActiveCategoryIndex] = useState<number>(0);
+  const [isJoinedMatch, setIsJoinedMatch] = useState(false);
   const [likedItems, setLikedItems] = useState<Record<string, boolean>>({});
+  const [isSnapshotOpen, setIsSnapshotOpen] = useState(false);
+  const [isGridViewOpen, setIsGridViewOpen] = useState(false);
+  const [islandMessage, setIslandMessage] = useState<string | null>(null);
+  const [isExpandedCleanMode, setIsExpandedCleanMode] = useState(false);
+  const [swipeDir, setSwipeDir] = useState<'left' | 'right' | null>(null);
 
-  // Streamlined Dynamic Island Toast Generator
-  const postIslandToast = (message: string) => {
-    setIslandMessage(message);
+  const activeCategory = IMMERSIVE_CATEGORIES[activeCategoryIndex];
+
+  // Dynamic Island System
+  const triggerToast = (msg: string) => {
+    setIslandMessage(msg);
   };
 
-  // Clear Island Messages
   useEffect(() => {
     if (islandMessage) {
-      const timer = setTimeout(() => {
-        setIslandMessage(null);
-      }, 3500);
+      const timer = setTimeout(() => setIslandMessage(null), 3500);
       return () => clearTimeout(timer);
     }
   }, [islandMessage]);
 
-  // Highlight specific cards depending on tag selecting
-  const filteredMediaItems = mediaItems.map(item => {
-    const isMatched = selectedTag === null || item.category === selectedTag;
-    return { ...item, highlighted: isMatched };
-  });
-
-  // Follow Button Toggle Action
   const handleFollowToggle = () => {
-    const isNewState = !isJoinedMatch;
-    setIsJoinedMatch(isNewState);
+    const nextState = !isJoinedMatch;
+    setIsJoinedMatch(nextState);
     setProfile(prev => ({
       ...prev,
-      followers: isNewState ? prev.followers + 1 : prev.followers - 1
+      followers: nextState ? prev.followers + 1 : prev.followers - 1
     }));
-    postIslandToast(isNewState ? "Following Lina! ➕" : "Unfollowed Lina");
+    triggerToast(nextState ? "Added to Curation Watchlist! ⚡" : "Removed from Watchlist");
   };
 
-  // Safe reset to standards
-  const resetToFactoryDefaults = () => {
-    setProfile({ ...INITIAL_PROFILE });
-    setMediaItems([ ...INITIAL_MEDIA_ITEMS ]);
-    setThemeIndex(0);
-    setCustomBg(null);
-    setIsBgDark(false);
-    setSelectedTag(null);
+  const handleToggleLike = (catId: string) => {
+    const isLiked = !likedItems[catId];
+    setLikedItems(prev => ({ ...prev, [catId]: isLiked }));
+    triggerToast(isLiked ? "Saved to Personal Curation! ❤️" : "Removed from Curation");
+  };
+
+  const resetToDefaultSettings = () => {
+    setActiveCategoryIndex(0);
     setIsJoinedMatch(false);
+    setIsGridViewOpen(false);
+    setIsExpandedCleanMode(false);
     setLikedItems({});
-    postIslandToast('Properties Reset 🔄');
+    setCurrentScreen('welcome');
+    triggerToast("System Reset 🔄");
   };
 
-  const handleThemeChange = () => {
-    let nextIndex;
-    do {
-      nextIndex = Math.floor(Math.random() * APP_THEMES.length);
-    } while (nextIndex === themeIndex && APP_THEMES.length > 1);
-    
-    setThemeIndex(nextIndex);
-    postIslandToast(`Theme: ${APP_THEMES[nextIndex].name} 🎨`);
-  };
-
-  // Like metrics toggle action
-  const handleToggleLike = (id: string, currentlyLiked: boolean) => {
-    setLikedItems(prev => ({ ...prev, [id]: !currentlyLiked }));
-    setMediaItems(prev => 
-      prev.map(item => {
-        if (item.id === id) {
-          return { ...item, likes: currentlyLiked ? item.likes - 1 : item.likes + 1 };
-        }
-        return item;
-      })
-    );
-    postIslandToast(!currentlyLiked ? 'You loved this card ❤️' : 'Removed from likes');
-  };
-
-  // Action to change/update a photo on the card in real-time
-  const handleUpdateItemImage = (id: string, newImage: string) => {
-    setMediaItems(prev =>
-      prev.map(item => item.id === id ? { ...item, image: newImage } : item)
-    );
-    setActiveDetailItem(prev => prev && prev.id === id ? { ...prev, image: newImage } : prev);
-    postIslandToast('Tastecard Photo Updated 🎨');
-  };
+  const isDeckScreen = currentScreen === 'deck';
+  const isWelcomeScreen = currentScreen === 'welcome';
 
   return (
-    <div 
-      className="min-h-dvh sm:min-h-screen w-full flex flex-col items-center justify-center p-3.5 sm:p-6 md:p-8 transition-all duration-500 relative select-none bg-cover bg-center bg-no-repeat"
-      style={{ 
-        backgroundColor: currentTheme.bg, 
-        backgroundImage: customBg ? `url("${customBg}")` : 'none',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        color: textColor 
-      }}
-    >
-      {/* Background overlay for custom background to guarantee exquisite readability */}
-      {customBg && (
-        <div className={`absolute inset-0 transition-opacity duration-500 pointer-events-none ${
-          isBgDark ? 'bg-black/25' : 'bg-white/5'
-        }`} />
+    <div className={`min-h-screen w-full flex flex-col items-center justify-center p-2 sm:p-4 relative overflow-hidden font-sans transition-all duration-700 ${
+      isWelcomeScreen ? 'bg-[#E4EEF0]' : 'bg-[#090909]'
+    }`}>
+      
+      {/* Immersive blurred ambient background mirroring the active card's image - active ONLY on deck screen */}
+      {isDeckScreen && (
+        <div 
+          className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out filter blur-[50px] scale-105 opacity-30 pointer-events-none" 
+          style={{ backgroundImage: `url("${activeCategory.image}")` }}
+        />
       )}
-      {/* Top Banner Dynamic Toast Island */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50">
+      
+      {/* Contrast dark overlay on deck screen */}
+      {isDeckScreen && (
+        <div className="absolute inset-0 bg-black/45 transition-all duration-1000 pointer-events-none" />
+      )}
+
+      {/* Dynamic Toast Overlay */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
         <AnimatePresence mode="wait">
           {islandMessage && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: -20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: -20 }}
-              className="bg-[#0C1519]/95 text-white border border-white/10 flex items-center gap-2.5 px-6 py-3 rounded-full shadow-2xl overflow-hidden min-w-[220px] justify-center text-center"
+              className="bg-neutral-900/95 border border-white/10 text-white/95 text-[11px] px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 backdrop-blur-md"
             >
               <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
-              <span className="text-xs font-medium tracking-wide">
-                {islandMessage}
-              </span>
+              <span className="font-semibold tracking-wide">{islandMessage}</span>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Main Adaptable Device Frame Card container */}
-      <main className="w-full max-w-sm sm:max-w-md my-auto relative space-y-4">
-        
-        {/* Toggle Switch Design Preset Style Floating bar */}
-        <div className="w-full flex justify-center scale-[0.93] origin-center">
-          <div className="bg-neutral-900/90 text-white backdrop-blur-2xl border border-white/10 p-1 rounded-full flex items-center justify-between gap-1 shadow-2xl relative z-40 w-full">
-            <button 
-              onClick={() => { setDesignStyle('glass'); postIslandToast("Vibe: Real-time Glass 🔮"); }}
-              className={`flex-1 py-2 rounded-full text-[11px] font-extrabold uppercase tracking-widest transition-all relative flex items-center justify-center gap-1.5 cursor-pointer ${
-                designStyle === 'glass' ? 'bg-white text-neutral-950 shadow-lg scale-105' : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Glass</span>
-            </button>
-            <button 
-              onClick={() => { setDesignStyle('immersive'); postIslandToast("Vibe: Immersive Travel 🧭"); }}
-              className={`flex-1 py-2 rounded-full text-[11px] font-extrabold uppercase tracking-widest transition-all relative flex items-center justify-center gap-1.5 cursor-pointer ${
-                designStyle === 'immersive' ? 'bg-white text-neutral-950 shadow-lg scale-105' : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              <Compass className="w-3.5 h-3.5" />
-              <span>Immersive</span>
-            </button>
-            <button 
-              onClick={() => { setDesignStyle('editorial'); postIslandToast("Vibe: Studio Editorial 🎨"); }}
-              className={`flex-1 py-2 rounded-full text-[11px] font-extrabold uppercase tracking-widest transition-all relative flex items-center justify-center gap-1.5 cursor-pointer ${
-                designStyle === 'editorial' ? 'bg-white text-neutral-950 shadow-lg scale-105' : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              <Palette className="w-3.5 h-3.5" />
-              <span>Editorial</span>
-            </button>
+      {/* Main Beautiful Device Simulator Container fitted exactly to mobile viewport height */}
+      <div 
+        className={`relative w-full max-w-[325px] h-[595px] rounded-[42px] border-[7px] transition-all duration-700 overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.85)] flex flex-col select-none ${
+          isWelcomeScreen ? 'bg-[#E4EEF0] border-neutral-300' : 'bg-black border-neutral-900/95'
+        }`}
+        id="device-sim-viewport"
+      >
+        {/* Device Header/Dynamic Notch area */}
+        <div className={`absolute top-0 inset-x-0 h-9 px-6 flex items-center justify-between text-[9.5px] font-sans font-extrabold tracking-tight z-50 pointer-events-none select-none transition-colors duration-500 ${
+          isWelcomeScreen ? 'text-neutral-800' : 'text-white/95'
+        }`}>
+          <span>10:10</span>
+          
+          {/* Dynamic Island Notch Center Element */}
+          <div className={`w-20 h-3.5 rounded-full border transition-colors duration-500 ${
+            isWelcomeScreen ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-950 border-white/5'
+          }`} />
+          
+          <div className="flex items-center gap-1">
+            <div className="flex items-end gap-0.5 h-1.5">
+              <div className={`w-0.5 h-1 rounded-sm ${isWelcomeScreen ? 'bg-neutral-800' : 'bg-white'}`} />
+              <div className={`w-0.5 h-1.5 rounded-sm ${isWelcomeScreen ? 'bg-neutral-800' : 'bg-white'}`} />
+              <div className={`w-0.5 h-2 rounded-sm ${isWelcomeScreen ? 'bg-neutral-800' : 'bg-white'}`} />
+            </div>
+            <span className="text-[8px] opacity-90 leading-none">5G</span>
           </div>
         </div>
 
-        <AnimatePresence mode="wait">
-          {designStyle === 'glass' && (
-            <motion.div 
-              key="style-glass"
-              initial={{ opacity: 0, scale: 0.96, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: -10 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className={`w-full rounded-[40px] p-5 sm:p-6 backdrop-blur-3xl border shadow-xl flex flex-col space-y-5 transition-all duration-500 ${cardBgClass} ${cardBorderClass}`}
-              id="lina-tastecard-portal"
-            >
-              {/* Main Card Inline Header Navigation */}
-              <div className="w-full flex items-center justify-between pb-3.5 border-b border-current/15">
-                {/* Reset Defaults button */}
-                <button 
-                  onClick={resetToFactoryDefaults}
-                  className="w-9 h-9 rounded-full bg-current/10 hover:bg-current/15 active:scale-90 transition-all flex items-center justify-center text-current cursor-pointer"
-                  title="Reset Settings"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </button>
+        {/* Outer view screens manager with Framer motion */}
+        <div className="flex-1 w-full h-full relative overflow-hidden">
+          <AnimatePresence mode="wait">
+            
+            {/* SCREEN 1: WELCOME TO TASTECARD (CLEAN LIGHT SURFACE) */}
+            {currentScreen === 'welcome' && (
+              <motion.div
+                key="welcome-viewport"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="absolute inset-0 flex flex-col justify-between p-6 overflow-hidden bg-[#E4EEF0]"
+              >
+                {isAnalyzing ? (
+                  /* Brief intermediate display saying 'Analyzing your gallery' with high-fidel animation */
+                  <div className="flex-1 flex flex-col items-center justify-center space-y-4 text-neutral-800 relative z-10 px-2 mt-8">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+                      className="w-10 h-10 border-3 border-amber-500 border-t-transparent rounded-full"
+                    />
+                    <div className="space-y-1 text-center">
+                      <h3 className="text-base font-black tracking-tight text-neutral-950">
+                        Analyzing your gallery...
+                      </h3>
+                      <p className="text-[10px] text-neutral-500 font-bold tracking-wide">
+                        Extracting aesthetic parameters
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div /> {/* Spacer */}
 
-                {/* Customizer title */}
-                <span className="text-xs font-bold font-mono tracking-widest uppercase text-current/90">
-                  Tastecard
-                </span>
+                    {/* Primary Content Block - Styled accurately to Saudi slide 1 */}
+                    <div className="space-y-6 pb-2 relative z-10 text-center">
+                      <div className="space-y-3">
+                        <h1 className="text-[28px] font-medium leading-[1.1] tracking-tight text-neutral-850">
+                          Welcome <br />
+                          <span className="font-extrabold text-neutral-950">to Tastecard</span>
+                        </h1>
+                        <p className="text-[12.5px] text-neutral-600 leading-relaxed font-bold max-w-[245px] mx-auto">
+                          Discover your gallery personality
+                        </p>
+                      </div>
 
-                {/* Background Image Upload button */}
-                <button 
-                  onClick={() => document.getElementById('bg-photo-uploader')?.click()}
-                  className="w-9 h-9 rounded-full bg-current/10 hover:bg-current/15 active:scale-90 transition-all flex items-center justify-center text-current cursor-pointer"
-                  title="Upload custom background photo"
-                >
-                  <ImageIcon className="w-4 h-4" />
-                </button>
-                <input 
-                  type="file"
-                  id="bg-photo-uploader"
-                  accept="image/*"
-                  onChange={handleBgUpload}
-                  className="hidden"
-                />
-              </div>
+                      {/* Clean rounded dark charcoal action pill */}
+                      <button
+                        onClick={() => {
+                          setIsAnalyzing(true);
+                          triggerToast("Initiating analysis... 🔍");
+                          setTimeout(() => {
+                            setIsAnalyzing(false);
+                            setCurrentScreen('deck');
+                            triggerToast("Analysis complete! 🧭");
+                          }, 1600);
+                        }}
+                        className="w-full py-3 text-[11px] font-black tracking-widest uppercase rounded-full bg-neutral-950 hover:bg-neutral-900 active:scale-95 transition-all text-white shadow-xl cursor-pointer text-center"
+                      >
+                        Get Started
+                      </button>
 
-              {/* Profile Owner Identity block */}
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <h1 className="text-3.5xl font-display font-bold tracking-tight text-current leading-none">
-                    {profile.name}
-                  </h1>
-                  
-                  {/* Dynamic Rarity Badge */}
-                  {profile.bioQuote === 'Rarity: rare' ? (
-                    <div className="flex items-center gap-2 py-0.5 select-none font-sans">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-current/60">Tastecard Rarity:</span>
-                      <span className="font-display font-extrabold uppercase text-xs tracking-wider bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-800 bg-clip-text text-transparent drop-shadow-[0_1px_1px_rgba(245,158,11,0.15)]">
-                        rare
+                      <span className="block text-center text-[9px] text-neutral-450 font-bold leading-normal tracking-wide">
+                        By continuing, you agree to <br />
+                        discover emergent gallery signatures
                       </span>
                     </div>
-                  ) : (
-                    <div className="pl-3 py-0.5 border-l-2 border-current/25 text-current/70 italic text-xs">
-                      "{profile.bioQuote}"
-                    </div>
-                  )}
-                </div>
+                  </>
+                )}
+              </motion.div>
+            )}
 
-                {/* Responsive "The Drop" Custom color changer theme cycler */}
-                <button
-                  onClick={handleThemeChange}
-                  className="text-current hover:opacity-80 hover:scale-125 active:scale-90 transition-all duration-300 select-none cursor-pointer p-1 relative group"
-                  title="the drop • Randomize Color Theme"
-                >
-                  <div className="absolute inset-0 bg-current/5 blur-[4px] rounded-full scale-0 group-hover:scale-100 transition-transform duration-300" />
-                  <svg className="w-7 h-7 relative z-10 filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]" fill="none" stroke="currentColor" strokeWidth={2.4} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a6 6 0 006-6c0-4-6-11-6-11S6 11 6 15a6 6 0 006 6z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 16a3 3 0 010-3.5" />
-                  </svg>
-                </button>
-              </div>
+            {/* SCREEN 2: PICK YOUR FUTURE (DECK GRID STACK INSPIRED FROM SCREEN 2) */}
+            {currentScreen === 'deck' && (
+              <motion.div
+                key="deck-viewport"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="absolute inset-0 flex flex-col justify-between pt-10 pb-4 px-4 text-white overflow-hidden"
+              >
+                {/* Card photo blurred much less so we can see the background photo more */}
+                <div 
+                  className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out filter blur-[2px] scale-100 opacity-75 pointer-events-none" 
+                  style={{ backgroundImage: `url("${activeCategory.image}")` }}
+                />
+                
+                {/* Lighter, softer contrasting overlay so background photo shines through */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/35 to-black/75 pointer-events-none" />
 
-              {/* Counts Statistics rows */}
-              <div className="grid grid-cols-3 gap-2 py-3.5 border-y border-current/15">
-                <div className="text-left">
-                  <span className="block font-mono text-lg font-extrabold text-current tracking-tight">
-                    {profile.followers === 2300 ? '2.3K' : profile.followers}
-                  </span>
-                  <span className="block text-[9px] uppercase tracking-wider text-current/70 font-semibold mt-0.5">
-                    {profile.followers === 2300 ? 'Photos' : 'Followers'}
-                  </span>
-                </div>
-
-                <div className="text-left">
-                  <span className="block font-mono text-lg font-extrabold text-current tracking-tight">
-                    {profile.following}
-                  </span>
-                  <span className="block text-[9px] uppercase tracking-wider text-current/70 font-semibold mt-0.5">
-                    emerging themes
-                  </span>
-                </div>
-
-                <div className="text-left">
-                  <span className="block font-mono text-lg font-extrabold text-current tracking-tight">
-                    {profile.commentsCount}
-                  </span>
-                  <span className="block text-[9px] uppercase tracking-wider text-current/70 font-semibold mt-0.5">
-                    Places
-                  </span>
-                </div>
-              </div>
-
-              {/* Centered chips wrapper containing tag filters with premium glass style */}
-              <div className="flex flex-wrap gap-2 pt-1 w-full justify-center max-w-[325px] mx-auto text-center">
-                {profile.tags.map((tag) => {
-                  const isActive = selectedTag === tag;
-                  const displayTag = tag.startsWith('#') ? tag.slice(1) : tag;
-                  return (
-                    <button
-                      key={tag}
-                      onClick={() => {
-                        const next = isActive ? null : tag;
-                        setSelectedTag(next);
-                        postIslandToast(next ? `Filter active: ${displayTag} 🔍` : 'Filters cleared 🛡️');
+                <>
+                  {/* Header Row */}
+                  <div 
+                    className="flex items-center justify-between w-full relative z-10"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Left: Back button to welcome page */}
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentScreen('welcome');
+                        triggerToast("Returned to welcome screen");
                       }}
-                      className={`text-xs font-sans px-3.5 py-1.5 rounded-full transition-all duration-300 active:scale-95 text-center cursor-pointer select-none border backdrop-blur-md ${
-                        isActive
-                          ? 'bg-white/35 text-current font-bold border-white/50 scale-105 shadow-md'
-                          : 'bg-white/10 text-current border-white/15 hover:bg-white/20'
-                      }`}
+                      className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 active:scale-90 transition-all flex items-center justify-center border border-white/10 text-white cursor-pointer"
+                      title="Back to Welcome"
                     >
-                      {displayTag}
+                      <ArrowLeft className="w-4 h-4" />
                     </button>
-                  );
-                })}
-              </div>
 
-              {/* Header divider block: Emergent Themes */}
-              <div className="text-center w-full pt-1.5 select-none">
-                <span className="text-[13px] font-bold tracking-widest font-mono uppercase text-current/90">
-                  Emergent Themes
-                </span>
-              </div>
+                    {/* Center: Added Top Gallery Themes in a premium font size */}
+                    <h2 className="text-[14.5px] font-black font-sans tracking-tight text-white flex-1 text-center select-none px-1">
+                      Top Gallery Themes
+                    </h2>
 
-              {/* Media grid showing 2 cards per row */}
-              <div className="py-1">
-                <div className="grid grid-cols-2 gap-3">
-                  {filteredMediaItems.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => setActiveDetailItem(item)}
-                      className={`relative aspect-[3/4] rounded-3xl overflow-hidden cursor-pointer transition-all duration-300 border border-black/5 shadow-md hover:scale-[1.02] hover:shadow-lg ${
-                        item.highlighted ? 'opacity-100 scale-100' : 'opacity-35 scale-95 blur-[0.5px]'
-                      }`}
-                      title={`View details on ${item.title}`}
-                      id={`media-card-${item.id}`}
-                    >
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover select-none"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
-                      
-                      <div className="absolute bottom-3 left-3 right-3 text-xs leading-snug">
-                        <span className="block font-medium text-white line-clamp-2">
-                          {item.title}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Share Tastecard Button Section with high contrast Glass look */}
-              <div className="pt-1">
-                <button
-                  onClick={() => setIsSnapshotOpen(true)}
-                  className="w-full py-4 rounded-2xl text-xs font-extrabold font-sans tracking-widest transition-all duration-300 shadow-lg active:scale-97 flex items-center justify-center gap-2 cursor-pointer uppercase bg-white/15 hover:bg-white/25 border border-white/35 backdrop-blur-md text-current"
-                  id="share-tastecard-btn"
-                >
-                  Share Tastecard ✦
-                </button>
-              </div>
-
-              {/* Miniature sub-text descriptor */}
-              <div id="card-footer-caption" className="text-center py-2 text-[10px] text-current/40 select-none font-mono tracking-widest uppercase">
-                Lina's Tastecard • #0000
-              </div>
-            </motion.div>
-          )}
-
-          {/* STYLE 2: Immersive Destination Travel Style (Saudi Inspired Moodboards 1 & 3 & 6) */}
-          {designStyle === 'immersive' && (
-            <motion.div
-              key="style-immersive"
-              initial={{ opacity: 0, scale: 0.96, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: -10 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="w-full rounded-[45px] p-6 backdrop-blur-2xl border border-white/10 shadow-2xl flex flex-col space-y-6 relative overflow-hidden text-amber-50 bg-neutral-950/85"
-            >
-              {/* Internal Cinematic ambient glow */}
-              <div className="absolute -top-32 -left-32 w-72 h-72 rounded-full bg-amber-500/10 blur-[100px] pointer-events-none" />
-              <div className="absolute -bottom-32 -right-32 w-72 h-72 rounded-full bg-orange-700/15 blur-[100px] pointer-events-none" />
-
-              {/* Custom Header Row for Travel Deck */}
-              <div className="w-full flex items-center justify-between pb-3 border-b border-white/10">
-                <span className="text-[10px] font-mono tracking-[0.25em] text-amber-400 font-extrabold uppercase">
-                  Emergent Travelogue
-                </span>
-                <span className="text-[10px] font-mono text-zinc-400">
-                  📍 24.71° N, 46.67° E
-                </span>
-              </div>
-
-              {/* Luxury Display Title with Serif font pairing from screen 3 */}
-              <div className="text-center space-y-1">
-                <h2 className="text-4xl font-serif tracking-tight text-amber-50 font-light leading-none">
-                  Lina's Tastecard
-                </h2>
-                <p className="text-[11px] font-sans tracking-wide text-zinc-400 italic">
-                  "Enjoy the future & invest in shaping it"
-                </p>
-              </div>
-
-              {/* Golden Travel Metrics Row (Inspired by Moodboard stats) */}
-              <div className="grid grid-cols-3 gap-2 py-3 border-y border-white/10 text-center relative z-10 bg-white/5 rounded-2xl px-2">
-                <div>
-                  <span className="block font-serif text-xl font-bold text-amber-300 tracking-tight">
-                    91%
-                  </span>
-                  <span className="block text-[8px] uppercase tracking-wider text-zinc-400 font-semibold font-mono mt-0.5">
-                    COHERENCY
-                  </span>
-                </div>
-                <div className="border-x border-white/5">
-                  <span className="block font-serif text-xl font-bold text-amber-300 tracking-tight">
-                    {profile.following}
-                  </span>
-                  <span className="block text-[8px] uppercase tracking-wider text-zinc-400 font-semibold font-mono mt-0.5">
-                    ANCHORS
-                  </span>
-                </div>
-                <div>
-                  <span className="block font-serif text-xl font-bold text-amber-300 tracking-tight">
-                    4.92 ★
-                  </span>
-                  <span className="block text-[8px] uppercase tracking-wider text-zinc-400 font-semibold font-mono mt-0.5">
-                    RATING
-                  </span>
-                </div>
-              </div>
-
-              {/* Minimal Luxury Filter Selection chips with Gold style */}
-              <div className="flex flex-wrap gap-1.5 justify-center pt-1.5">
-                {profile.tags.map((tag) => {
-                  const isActive = selectedTag === tag;
-                  const displayTag = tag.startsWith('#') ? tag.slice(1) : tag;
-                  return (
-                    <button
-                      key={tag}
-                      onClick={() => {
-                        const next = isActive ? null : tag;
-                        setSelectedTag(next);
-                        postIslandToast(next ? `Discovering theme: "${displayTag}"` : 'All Travel themes visible');
+                    {/* Right: Options/settings button */}
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerToast("Options activated ⚙️");
                       }}
-                      className={`text-[10px] font-mono px-3 py-1 rounded-full border transition-all duration-300 cursor-pointer ${
-                        isActive
-                          ? 'bg-amber-400 text-neutral-950 font-bold border-amber-300 shadow-md scale-105'
-                          : 'bg-transparent text-zinc-300 border-white/10 hover:border-white/30 hover:bg-white/5'
-                      }`}
+                      className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 active:scale-90 transition-all flex items-center justify-center border border-white/10 text-amber-400 cursor-pointer"
+                      title="Options"
                     >
-                      {displayTag}
+                      <Sliders className="w-3.5 h-3.5" />
                     </button>
-                  );
-                })}
-              </div>
+                  </div>
 
-              {/* Interactive Overlapping Cards Deck Stack (Inspired directly by screenshot 3) */}
-              <div className="w-full py-4 flex flex-col items-center justify-center relative min-h-[340px]">
-                {/* Find current deck items depending on filters */}
-                {(() => {
-                  const deckItems = mediaItems.filter(item => selectedTag === null || item.category === selectedTag);
-                  if (deckItems.length === 0) {
-                    return (
-                      <div className="text-zinc-500 py-12 text-center text-xs">
-                        No memories in this node catalog yet.
-                      </div>
-                    );
-                  }
-                  
-                  return (
-                    <div className="w-full max-w-[280px] h-[310px] relative">
-                      {deckItems.map((item, index) => {
-                        // Max 3 stacked cards shown
-                        if (index > 2) return null;
-                        
-                        // Overlapping card parameters
-                        const rotate = index === 0 ? 0 : index === 1 ? 4 : -3;
-                        const scale = index === 0 ? 1 : index === 1 ? 0.94 : 0.88;
-                        const y = index === 0 ? 0 : index === 1 ? 16 : 30;
-                        const zIndex = 30 - index;
-                        const opacity = index === 0 ? 1 : 0.65;
+                  {/* Overlapping Stacked Card deck layout OR Grid view */}
+                  {!isGridViewOpen ? (
+                    <div 
+                      className="flex-1 flex items-center justify-center relative min-h-[325px] py-1 mt-1.5 select-none"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="w-full max-w-[215px] h-[310px] relative">
+                        {IMMERSIVE_CATEGORIES.map((cat, idx) => {
+                          // Compute offset relative to active card
+                          const relativeIndex = (idx - activeCategoryIndex + IMMERSIVE_CATEGORIES.length) % IMMERSIVE_CATEGORIES.length;
+                          
+                          // Render maximum 3 visible cards in stack
+                          if (relativeIndex > 2) return null;
 
-                        return (
-                          <motion.div
-                            key={item.id}
-                            style={{ zIndex }}
-                            animate={{ rotate, scale, y, opacity }}
-                            transition={{ type: 'spring', damping: 20, stiffness: 150 }}
-                            onClick={() => {
-                              if (index === 0) {
-                                setActiveDetailItem(item);
-                              } else {
-                                // Put selected card to front by selecting its tag!
-                                setSelectedTag(item.category);
-                                postIslandToast(`Shifting Deck: ${item.title}`);
-                              }
-                            }}
-                            className={`absolute inset-0 w-full h-full rounded-[28px] overflow-hidden cursor-pointer shadow-2xl border border-white/15 bg-neutral-900 group ${
-                              index === 0 ? 'hover:scale-[1.02]' : ''
-                            } transition-transform duration-300`}
-                          >
-                            <img
-                              src={item.image}
-                              alt={item.title}
-                              referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover select-none brightness-[0.88] group-hover:brightness-100 transition-all duration-300"
-                            />
-                            {/* Deep custom gold/black ambient vignette */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none" />
+                          // Visual settings matching the design mockup perfectly
+                          const scale = relativeIndex === 0 ? 1 : relativeIndex === 1 ? 0.94 : 0.88;
+                          const y = relativeIndex === 0 ? 0 : relativeIndex === 1 ? -12 : -24;
+                          const zIndex = 40 - relativeIndex;
+                          const opacity = relativeIndex === 0 ? 1 : 0.55;
+                          const rotate = relativeIndex === 0 ? 0 : relativeIndex === 1 ? 3 : -3;
 
-                            {/* Floating category emblem stamp */}
-                            <div className="absolute top-4 right-4 bg-amber-500/20 text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded-full text-[8.5px] font-mono backdrop-blur-md uppercase font-bold tracking-widest leading-none">
-                              {item.category.slice(1)}
-                            </div>
+                          return (
+                            <motion.div
+                              key={cat.id}
+                              style={{ 
+                                zIndex,
+                                boxShadow: relativeIndex === 0 ? `0 15px 30px -10px ${cat.accentHex}20` : undefined
+                              }}
+                              animate={{ 
+                                scale, 
+                                y, 
+                                rotate, 
+                                opacity: relativeIndex === 0 && swipeDir !== null ? 0 : opacity,
+                                x: relativeIndex === 0 ? (swipeDir === 'left' ? -320 : swipeDir === 'right' ? 320 : 0) : 0
+                              }}
+                              transition={{ 
+                                type: 'spring', 
+                                stiffness: relativeIndex === 0 && swipeDir !== null ? 150 : 120, 
+                                damping: relativeIndex === 0 && swipeDir !== null ? 22 : 18, 
+                                mass: 0.9,
+                                opacity: { duration: 0.22, ease: 'easeOut' }
+                              }}
+                              drag={relativeIndex === 0 && swipeDir === null ? "x" : false}
+                              dragConstraints={{ left: 0, right: 0 }}
+                              dragElastic={0.65}
+                              onDragEnd={(event, info) => {
+                                if (swipeDir !== null) return;
+                                if (info.offset.x < -60) {
+                                  setSwipeDir('left');
+                                  triggerToast("Swiped 🧭");
+                                  setTimeout(() => {
+                                    setActiveCategoryIndex((prev) => (prev + 1) % IMMERSIVE_CATEGORIES.length);
+                                    setSwipeDir(null);
+                                  }, 200);
+                                } else if (info.offset.x > 60) {
+                                  setSwipeDir('right');
+                                  triggerToast("Swiped 🧭");
+                                  setTimeout(() => {
+                                    setActiveCategoryIndex((prev) => (prev - 1 + IMMERSIVE_CATEGORIES.length) % IMMERSIVE_CATEGORIES.length);
+                                    setSwipeDir(null);
+                                  }, 200);
+                                }
+                              }}
+                              whileTap={relativeIndex === 0 && swipeDir === null ? { cursor: 'grabbing' } : undefined}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (swipeDir !== null) return;
+                                if (relativeIndex === 0) {
+                                  setCurrentScreen('expanded');
+                                  triggerToast(`Opening ${cat.title} 🧭`);
+                                } else {
+                                  setActiveCategoryIndex(idx);
+                                }
+                              }}
+                              className={`absolute inset-0 w-full h-full rounded-[22px] ${cat.cardBg} border shadow-2xl overflow-hidden flex flex-col justify-between p-4 pb-4.5 transition-all duration-500 ${
+                                relativeIndex === 0 ? `cursor-grab ${cat.borderColor} ring-1 ring-white/[0.05]` : 'cursor-pointer border-white/[0.03]'
+                              }`}
+                            >
+                              {/* Inner Card Top Row */}
+                              <div className="h-1" />
 
-                            {/* Interactive details box */}
-                            <div className="absolute bottom-4 left-4 right-4 space-y-1.5 text-left">
-                              <div className="flex items-center justify-between">
-                                <h3 className="text-base font-serif font-bold text-white tracking-wide">
-                                  {item.title}
+                              {/* Center Card Large Display Title */}
+                              <div className="my-0.5 text-center text-current/90 relative z-10 w-full px-1">
+                                <h3 className="text-[17px] font-extrabold tracking-widest uppercase font-serif bg-gradient-to-b from-white to-neutral-250 bg-clip-text text-transparent">
+                                  {cat.title}
                                 </h3>
-                                <span className="text-[10px] font-mono text-amber-400 font-bold shrink-0">
-                                  {4.8 + (index * 0.05) > 5 ? '4.95' : (4.8 + (index * 0.05)).toFixed(2)} ★
+                                {/* Changed 'Rare Node' style badge to 'Theme Rarity: ...' on all cards */}
+                                <span className={`text-[8px] sm:text-[8.5px] font-mono uppercase tracking-[0.12em] font-extrabold block mt-0.5 ${cat.accentColor} animate-pulse whitespace-nowrap overflow-hidden text-ellipsis`}>
+                                  ✦ Theme Rarity: {cat.badgeText === 'EPIC' ? 'Epic' : (cat.badgeText === 'LEGENDARY' ? 'Legendary' : (cat.badgeText === 'COMMON' ? 'Common' : 'Rare'))} ✦
                                 </span>
                               </div>
-                              <p className="text-[10px] text-zinc-300 line-clamp-2 leading-relaxed">
-                                {item.description}
-                              </p>
-                              {index === 0 && (
-                                <div className="pt-2 flex justify-between items-center text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400">
-                                  <span>View Location Anchor</span>
-                                  <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                                </div>
-                              )}
-                            </div>
-                          </motion.div>
-                        );
-                      })}
+
+                              {/* Curved photo frame - wider and longer to fill the card beautifully (145px width / 200px height) */}
+                              <div className="w-[145px] h-[200px] mx-auto rounded-xl overflow-hidden relative border border-white/5 shadow-inner flex items-center justify-center shrink-0 transition-all duration-300">
+                                <img 
+                                  src={cat.image} 
+                                  alt={cat.title} 
+                                  className="w-full h-full object-cover select-none filter brightness-95"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none" />
+                              </div>
+
+                              {/* Elegant action prompt inside the card frame just beneath the image */}
+                              <span className="text-[9px] text-zinc-250 font-mono uppercase tracking-[0.16em] font-extrabold text-center block select-none my-1 animate-pulse">
+                                Tap to Modify and Explore
+                              </span>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  );
-                })()}
-              </div>
-
-              {/* Minimal Luxury action buttons */}
-              <div className="pt-1 w-full flex items-center gap-3">
-                <button
-                  onClick={handleFollowToggle}
-                  className="flex-1 py-3 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold font-mono uppercase tracking-widest text-[#FDF9F6] cursor-pointer text-center"
-                >
-                  {isJoinedMatch ? 'Following ' : 'Join Curation'}
-                </button>
-                <button
-                  onClick={() => setIsSnapshotOpen(true)}
-                  className="flex-1 py-3 px-4 rounded-xl bg-amber-400 hover:bg-amber-350 text-neutral-950 text-xs font-bold font-mono uppercase tracking-widest cursor-pointer text-center shadow-lg"
-                >
-                  Share Story Sticker
-                </button>
-              </div>
-
-              <div className="text-center text-[8.5px] font-mono text-zinc-500 tracking-[0.3em] uppercase">
-                Lina's Tastecard • Riyadh
-              </div>
-            </motion.div>
-          )}
-
-          {/* STYLE 3: Studio Boutique Editorial (N99 Studio & Warm Cream Luxury mix) */}
-          {designStyle === 'editorial' && (
-            <motion.div
-              key="style-editorial"
-              initial={{ opacity: 0, scale: 0.96, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: -10 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="w-full rounded-[38px] p-6 backdrop-blur-3xl shadow-xl flex flex-col space-y-6 text-zinc-900 border border-stone-200 bg-stone-50"
-            >
-              {/* Premium editorial design grid header lines */}
-              <div className="w-full flex items-center justify-between border-b border-stone-200 pb-4">
-                <span className="text-[10px] font-mono tracking-[0.25em] text-zinc-500 font-extrabold uppercase">
-                  N99 Beauty Studio
-                </span>
-                <span className="text-[9px] font-mono px-2 py-0.5 border border-stone-300 text-stone-600 rounded-full">
-                  Verified Curator
-                </span>
-              </div>
-
-              {/* Large Circular Avatar Badge block from Studio reference */}
-              <div className="flex flex-col items-center text-center space-y-3 pt-2">
-                <div className="relative">
-                  <div className="w-20 h-20 rounded-full border-[3px] border-white shadow-xl overflow-hidden bg-stone-100">
-                    <img 
-                      src="/src/assets/images/bg_face_portrait_1781548017737.jpg" 
-                      alt="Lina" 
-                      className="w-full h-full object-cover scale-105"
-                    />
-                  </div>
-                  <div className="absolute -bottom-1 -right-1 bg-neutral-900 border border-white text-white p-1 rounded-full">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <h3 className="text-2.5xl font-display font-black tracking-tight text-neutral-900">
-                    Emily Taylor
-                  </h3>
-                  <div className="flex items-center justify-center gap-1.5 text-xs text-zinc-500 font-bold">
-                    <span>@linas_tastecard</span>
-                    <span className="w-1 h-1 rounded-full bg-zinc-400" />
-                    <span>Stylist & Curator</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Editorial Thin Divider Line */}
-              <div className="border-t border-stone-200/80 w-full pt-4">
-                <div className="text-xs text-stone-500 italic text-center max-w-xs mx-auto">
-                  "Finding emergent beauty signatures across sensory nodes."
-                </div>
-              </div>
-
-              {/* Asymmetrical Masonry Pinterest Grid Layout (Directly from screen 4) */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-xs font-bold text-stone-800 uppercase tracking-wider">
-                    Add Inspo References ({filteredMediaItems.length})
-                  </span>
-                  <span className="text-[10px] font-mono text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded-full">
-                    Consistency 91%
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Left Column: Taller Portraits */}
-                  <div className="space-y-4">
-                    {filteredMediaItems.filter((_, i) => i % 2 === 0).map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => setActiveDetailItem(item)}
-                        className={`group relative rounded-3xl overflow-hidden cursor-pointer shadow-md bg-stone-100 border border-stone-200 hover:shadow-lg transition-all duration-300 ${
-                          item.highlighted ? 'opacity-100 scale-100' : 'opacity-30 scale-95 blur-[0.3px]'
-                        }`}
+                  ) : (
+                      /* Custom Grid View */
+                      <div 
+                        className="flex-1 overflow-y-auto px-1 py-1 mt-2.5 scrollbar-none max-h-[300px]"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <img 
-                          src={item.image} 
-                          alt={item.title} 
-                          className="w-full aspect-[3/4.6] object-cover group-hover:scale-102 transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/15 to-transparent" />
-                        
-                        {/* Info details absolute badge */}
-                        <div className="absolute bottom-3.5 left-3.5 right-3.5 text-left text-xs space-y-1">
-                          <span className="block font-medium text-white line-clamp-1 leading-none">{item.title}</span>
-                          <span className="inline-block px-1.5 py-0.5 bg-white/20 text-white rounded text-[8.5px] font-mono tracking-widest uppercase scale-90 origin-left">
-                            {item.category}
-                          </span>
+                        <div className="grid grid-cols-2 gap-3">
+                          {IMMERSIVE_CATEGORIES.map((cat, idx) => (
+                            <motion.div
+                              key={`grid-${cat.id}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveCategoryIndex(idx);
+                                setIsGridViewOpen(false);
+                                setCurrentScreen('expanded');
+                                triggerToast(`Opening ${cat.title} 🧭`);
+                              }}
+                              className={`${cat.cardBg} border ${cat.borderColor} rounded-[18px] p-3 flex flex-col justify-between h-[135px] cursor-pointer hover:border-white/20 transition-all shadow-xl text-left relative overflow-hidden`}
+                              whileHover={{ y: -2 }}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30 pointer-events-none" />
+                              <div className="text-left relative z-10 w-full overflow-hidden">
+                                <h4 className="text-[11.5px] font-extrabold tracking-wider uppercase text-white font-display line-clamp-1">{cat.title}</h4>
+                                <span className={`text-[8px] font-mono font-extrabold uppercase tracking-widest block mt-0.5 ${cat.accentColor} whitespace-nowrap overflow-hidden text-ellipsis`}>
+                                  Theme Rarity: {cat.badgeText === 'EPIC' ? 'Epic' : (cat.badgeText === 'LEGENDARY' ? 'Legendary' : (cat.badgeText === 'COMMON' ? 'Common' : 'Rare'))}
+                                </span>
+                              </div>
+                              <div className="w-full h-[60px] rounded-lg overflow-hidden my-1 border border-white/5 relative">
+                                <img src={cat.image} className="w-full h-full object-cover" alt="" />
+                              </div>
+                              <div className="text-center relative z-10">
+                                <span className="text-[9px] font-semibold text-zinc-350 hover:text-white transition-colors tracking-wide">Tap to explore</span>
+                              </div>
+                            </motion.div>
+                          ))}
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    )}
 
-                  {/* Right Column: Dynamic Proportions */}
-                  <div className="space-y-4 pt-6">
-                    {filteredMediaItems.filter((_, i) => i % 2 !== 0).map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => setActiveDetailItem(item)}
-                        className={`group relative rounded-3xl overflow-hidden cursor-pointer shadow-md bg-stone-100 border border-stone-200 hover:shadow-lg transition-all duration-300 ${
-                          item.highlighted ? 'opacity-100 scale-100' : 'opacity-30 scale-95 blur-[0.3px]'
-                        }`}
+                    {/* Change 'swipe for more' to 'Share Tastecard' with expanded width and elegant styling */}
+                    <button 
+                      className="text-center text-[11px] text-zinc-200 font-extrabold bg-white/5 hover:bg-amber-400/10 active:scale-95 transition-all py-2 px-6 rounded-full border border-white/5 w-full max-w-[215px] mx-auto mt-2 tracking-wide uppercase select-none relative z-10 font-mono block cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsSnapshotOpen(true);
+                        triggerToast("Snapshot portal opened! 📸");
+                      }}
+                    >
+                      ✨ Share Tastecard
+                    </button>
+
+                    {/* Single Glass Customise Tastecard Button */}
+                    <div 
+                      className="w-full mt-2 flex flex-col items-center relative z-10"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsGridViewOpen(!isGridViewOpen);
+                          triggerToast(isGridViewOpen ? "Back to stack view 🧭" : "Grid customizer active! 🎯");
+                        }}
+                        className="py-2 w-full max-w-[215px] rounded-full bg-white/10 hover:bg-white/15 active:scale-95 transition-all text-white border border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.55)] backdrop-blur-md cursor-pointer text-center text-[11.5px] font-black tracking-wider uppercase font-display"
                       >
-                        <img 
-                          src={item.image} 
-                          alt={item.title} 
-                          className="w-full aspect-square object-cover group-hover:scale-102 transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/15 to-transparent" />
-                        
-                        {/* Info details absolute badge */}
-                        <div className="absolute bottom-3.5 left-3.5 right-3.5 text-left text-xs space-y-1">
-                          <span className="block font-medium text-white line-clamp-1 leading-none">{item.title}</span>
-                          <span className="inline-block px-1.5 py-0.5 bg-white/20 text-white rounded text-[8.5px] font-mono tracking-widest uppercase scale-90 origin-left">
-                            {item.category}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                        {isGridViewOpen ? "View Card Stack" : "Customise Tastecard"}
+                      </button>
+                    </div>
+                  </>
+              </motion.div>
+            )}
+
+            {/* SCREEN 3: CATEGORY EXPANDED (MAGNA CITY IMPRESSIVE IMMERSIVE STATE) */}
+            {currentScreen === 'expanded' && (
+              <motion.div
+                key="expanded-viewport"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.35 }}
+                onClick={() => {
+                  setCurrentScreen('deck');
+                  triggerToast("Returned to selector deck");
+                }}
+                className="absolute inset-0 flex flex-col justify-end p-4 pb-6 text-white font-sans overflow-hidden cursor-pointer"
+              >
+                {/* Fully unblurred background image */}
+                <div 
+                  className="absolute inset-0 bg-cover bg-center filter-none scale-100 opacity-100 pointer-events-none transition-all duration-500 ease-in-out"
+                  style={{ backgroundImage: `url("${activeCategory.image}")` }}
+                />
+                
+                {/* Subtle vignette/contrast overlay to protect readability of the share story button */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
+
+                {/* Subtle 'swipe down to return' text hint & ChevronDown icon at the top to improve intuition */}
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5 z-25 pointer-events-none animate-pulse">
+                  <ChevronDown className="w-5 h-5 text-white/90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                  <span className="text-[9.5px] uppercase font-mono tracking-[0.2em] font-black text-white/90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                    swipe down to return
+                  </span>
+                </div>
+
+                {/* Quiet Close button in the top corner to let user return easily */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentScreen('deck');
+                    triggerToast("Returned to selector deck");
+                  }}
+                  className="absolute top-5 right-5 w-8 h-8 rounded-full bg-black/50 hover:bg-black/75 text-zinc-200 hover:text-white border border-white/10 active:scale-95 transition-all flex items-center justify-center cursor-pointer shadow-xl z-25"
+                >
+                  <X className="w-4 h-4 font-extrabold" />
+                </button>
+
+                {/* Elegant card metadata layer dynamic for each category */}
+                <div 
+                  className="w-full flex justify-between items-end relative z-10 mb-3 px-1 pointer-events-none text-left"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Left Side: Name and Theme Rarity */}
+                  <div className="flex flex-col">
+                    <span className="text-[21px] font-display tracking-tight font-extrabold leading-tight text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.95)]">
+                      {activeCategory.title === 'THE PEAKS' ? 'AlUla Peaks' : (activeCategory.title === 'THE FLAVORS' ? 'Citrus Oasis' : (activeCategory.title === 'THE REFUSION' ? 'Sage Tonic' : 'Ancient Keep'))}
+                    </span>
+                    <span className="text-[8px] sm:text-[9px] font-mono tracking-[0.16em] text-amber-400 font-extrabold uppercase mt-0.5 drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.95)] whitespace-nowrap overflow-hidden text-ellipsis">
+                      ✦ THEME RARITY: {activeCategory.badgeText === 'EPIC' ? 'Epic' : (activeCategory.badgeText === 'LEGENDARY' ? 'Legendary' : (activeCategory.badgeText === 'COMMON' ? 'Common' : 'Rare'))}
+                    </span>
+                  </div>
+
+                  {/* Right Side: Photo Count */}
+                  <div className="text-right">
+                    <span className="text-[11px] font-mono tracking-wider font-extrabold text-white bg-black/55 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
+                      173 photos
+                    </span>
                   </div>
                 </div>
-              </div>
 
-              {/* Styled Creator Follow Option matching Emily Taylor from Screen 4 */}
-              <div className="p-4 bg-stone-100 border border-stone-200/60 rounded-3xl flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-full border border-stone-300 overflow-hidden shrink-0">
-                    <img 
-                      src="/src/assets/images/bg_face_portrait_1781548017737.jpg" 
-                      alt="Lina" 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="text-left">
-                    <span className="block text-xs font-extrabold text-stone-900 tracking-tight leading-tight">Follow Curations</span>
-                    <span className="block text-[10px] font-mono text-stone-500">{profile.followers} Saved Nodes</span>
-                  </div>
+                {/* Single Share Button container styled beautifully at bottom */}
+                <div 
+                  className="w-full relative z-10 bottom-1"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsSnapshotOpen(true);
+                      triggerToast("Snapshot portal opened! 📸");
+                    }}
+                    className="w-full py-3.5 rounded-full bg-white/10 hover:bg-white/15 active:scale-95 transition-all text-white border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-md cursor-pointer text-center text-[12.5px] font-mono tracking-widest uppercase font-black"
+                  >
+                    ✨ Share Curated Story Sticker
+                  </button>
                 </div>
-                <button
-                  onClick={handleFollowToggle}
-                  className={`px-4 py-2 rounded-xl text-[10px] font-mono font-bold uppercase cursor-pointer transition-all ${
-                    isJoinedMatch 
-                      ? 'bg-neutral-200 text-stone-800' 
-                      : 'bg-[#F2A5C0] text-stone-900 border border-fuchsia-300 hover:scale-105 active:scale-95 shadow'
-                  }`}
-                >
-                  {isJoinedMatch ? 'Following' : 'Follow'}
-                </button>
-              </div>
+              </motion.div>
+            )}
 
-              {/* Complete action footer share */}
-              <div className="pt-2">
-                <button
-                  onClick={() => setIsSnapshotOpen(true)}
-                  className="w-full py-4 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold tracking-widest font-mono uppercase cursor-pointer text-center shadow-lg hover:shadow-xl transition-all"
-                >
-                  Save Inspo Story Card
-                </button>
-              </div>
+          </AnimatePresence>
+        </div>
+      </div>
 
-              <div className="text-center text-[8px] font-mono text-zinc-400 tracking-[0.25em] uppercase">
-                Emily Taylor Reference Series
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+      {/* Global Modals overlay wrapper */}
+      <AnimatePresence>
+        {isSnapshotOpen && (
+          <SnapshotModal
+            profile={profile}
+            mediaItems={INITIAL_MEDIA_ITEMS}
+            currentTheme={{
+              name: 'Warm Sunset',
+              bg: '#181310',
+              text: '#fffdee',
+              cardBg: 'bg-black/45 backdrop-blur-2xl',
+              cardBorder: 'border-white/10'
+            }}
+            customBg={null}
+            isBgDark={true}
+            selectedTag={activeCategory.id}
+            designStyle="immersive"
+            onClose={() => setIsSnapshotOpen(false)}
+            onPostToast={(msg) => triggerToast(msg)}
+          />
+        )}
+      </AnimatePresence>
 
-        {/* Global Modal Overlay Layers */}
-        <AnimatePresence>
-          {activeDetailItem && (
-            <DetailModal
-              item={activeDetailItem}
-              onClose={() => setActiveDetailItem(null)}
-              liked={!!likedItems[activeDetailItem.id]}
-              onToggleLike={handleToggleLike}
-              onUpdateImage={handleUpdateItemImage}
-            />
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {isShareOpen && (
-            <ShareModal
-              handle={profile.handle}
-              name={profile.name}
-              onClose={() => setIsShareOpen(false)}
-              onPostToast={(msg) => {
-                postIslandToast(msg);
-                setIsShareOpen(false);
-              }}
-            />
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {isSnapshotOpen && (
-            <SnapshotModal
-              profile={profile}
-              mediaItems={mediaItems}
-              currentTheme={currentTheme}
-              customBg={customBg}
-              isBgDark={isBgDark}
-              selectedTag={selectedTag}
-              designStyle={designStyle}
-              onClose={() => setIsSnapshotOpen(false)}
-              onPostToast={(msg) => {
-                postIslandToast(msg);
-              }}
-            />
-          )}
-        </AnimatePresence>
     </div>
+  );
+}
+
+// PlusIcon replacement to stay independent of other files
+function PlusIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
   );
 }
