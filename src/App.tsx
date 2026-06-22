@@ -276,6 +276,10 @@ export default function App() {
     toPng(node, {
       pixelRatio: 2, // Standard high-definition crisp image
       cacheBust: false,
+      filter: (n: any) => {
+        if (n.id === "exclude-from-capture") return false;
+        return true;
+      },
       backgroundColor: "#0a0a0a",
       style: {
         position: "relative",
@@ -1551,16 +1555,16 @@ function ShareModal({
           {/* Tastecard Container - Wrapper for screenshot to include background */}
           <div
             id="tastecard-printable-modal"
-            className="w-full max-w-[360px] relative shrink-0 rounded-[32px] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+            className="w-full max-w-[360px] relative shrink-0 rounded-[32px] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.5)] bg-[#0a0a0a]"
           >
-            {/* Background image specifically for the capture */}
+            {/* Background image specifically matching grid view */}
             <img
               src={homeBg}
-              className="absolute inset-0 w-full h-full object-cover filter brightness-75 scale-100"
+              className="absolute inset-0 w-full h-full object-cover opacity-80"
               alt=""
             />
-            {/* Opaque gradient layer to replace blur */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/60 pointer-events-none" />
+            {/* Opaque gradient layer to mirror the grid view */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/30 to-black/70 pointer-events-none" />
             
             {/* Card Content Container */}
             <div className="w-full h-full border border-white/15 p-6 pt-5 pb-5 text-white flex flex-col relative font-sans">
@@ -1594,14 +1598,14 @@ function ShareModal({
               </div>
 
               {/* Stats Row */}
-              <div className="flex gap-10 mb-6 text-white/95 items-center">
+              <div className="flex mb-6 text-white/95 items-center">
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-[22px] font-extrabold tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-br from-white to-white/70">2.0K</span>
                   <span className="text-[9px] font-mono tracking-widest text-white/60 font-bold uppercase">
                     PHOTOS
                   </span>
                 </div>
-                <div className="flex items-baseline gap-1.5">
+                <div className="flex items-baseline gap-1.5 ml-[95px]">
                   <span className="text-[22px] font-extrabold tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-br from-white to-white/70">6</span>
                   <span className="text-[9px] font-mono tracking-widest text-white/60 font-bold uppercase">
                     THEMES
@@ -1669,6 +1673,7 @@ function ShareModal({
                 </span>
                 
                 <button
+                  id="exclude-from-capture"
                   onClick={() => {
                     onShareTastecard();
                     setTimeout(onClose, 1200);
